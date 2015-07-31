@@ -360,15 +360,15 @@ class ActionSequenceProcessor:
             position += 4 + length
  
             if type == 0:
-                print 'INDEX = ', index, 'TYPE=CMD   :', self.process_cmd(data)
+                print 'INDEX = %(index)02d TYPE =%(type)5s : %(data)s' % {'index':index, 'type': 'CMD', 'data' : self.process_cmd(data)}
             elif type == 1:
-                print 'INDEX = ', index, 'TYPE=WAIT  :', data[3] + 0x100*data[2] + 0x10000*data[1] + 0x10000000 * data[0]
+                print 'INDEX = %(index)02d TYPE =%(type)5s : %(data)s' % {'index':index, 'type': 'WAIT', 'data' : str(self.int_32(data[0:4]))}
             elif type == 2:
-                print 'INDEX = ', index, 'TYPE=ACSEQ :', data[1] + 0x100*data[0], '-', self.acseq_ids[int(data[1] + 0x100*data[0])]
+                print 'INDEX = %(index)02d TYPE =%(type)5s : %(data)s' % {'index':index, 'type': 'ACSEQ', 'data' : 'ACQ(' + str(self.int_16(data[0:2])) + ') - ' + self.acseq_ids[int(data[1] + 0x100*data[0])]}
             elif type == 3:
-               print 'INDEX = ', index, 'TYPE=Enter Critical Section'
+                print 'INDEX = %(index)02d TYPE =%(type)5s : %(data)s' % {'index':index, 'type': 'CRIT', 'data' : 'Enter Critical Section'}
             elif type == 3:
-                print 'INDEX = ', index, 'TYPE=Leave Critical Section'
+                print 'INDEX = %(index)02d TYPE =%(type)5s : %(data)s' % {'index':index, 'type': 'CRIT', 'data' : 'Leave Critical Section'}
             else:
                 print 'ERROR'
             index += 1
@@ -421,11 +421,11 @@ class ActionSequenceProcessor:
 
         elif type == 11 and subtype in [1, 2, 6]:
             if subtype == 1:
-                text += 'Enable MTL release '
+                text += 'Enable MTL release'
             elif subtype == 2:
-                text += 'Disable MTL release '
+                text += 'Disable MTL release'
             elif subtype == 6:
-                text += 'Delete MTL commands '
+                text += 'Delete MTL commands'
 
         elif type == 128 and subtype in [131]:
             if subtype == 131:
@@ -459,7 +459,7 @@ class ActionSequenceProcessor:
                 text += 'Disable PMON (Current use): '
             text += f
 
-        return text + ' - ' + ''.join(['%(data)02X' % {'data':d} for d in data])
+        return text + ' ' + ''.join(['%(data)02X' % {'data':d} for d in data])
 
 if __name__ == '__main__':
     main()
