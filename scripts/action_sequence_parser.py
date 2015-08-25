@@ -133,6 +133,7 @@ class ActionSequence:
         self.id = id
         self.items = []
         self.real_items = []
+        self.time = 0
 
     def __eq__(self, other):
         return self.id == other.id and self.name == other.name
@@ -152,6 +153,11 @@ class ActionSequence:
     def get_id(self):
         return int(self.id)
 
+    def set_time(self, time):
+        self.time = time
+
+    def get_time(self):
+        return self.time
 
     def add_item(self, item):
         self.items.append({'type':item.__class__.__name__, 'item':item})
@@ -268,6 +274,12 @@ class ActionSequenceProcessor:
     def __init__(self, action_sequences, verbose):
         self.action_sequences = action_sequences
         self.verbose = verbose
+
+
+        for a in action_sequences.keys():
+            self.initialise()
+            self.process_action_sequence(a, True)
+
         self.initialise()
 
     def initialise(self):
@@ -275,31 +287,37 @@ class ActionSequenceProcessor:
         self.time = 0
         self.nesting = Nesting('-', 3)
 
-    def process_action_sequence(self, id):
+    def process_action_sequence(self, id, silent = False):
 
         self.nesting.increment()
 
         action_sequence = self.action_sequences[id]
 
-        print '%(t)8.1fs %(s)s %(id)3d %(name)s' %  {'t': self.time, 's':self.nesting, 'id': action_sequence.get_id(), 'name' : action_sequence.get_name()}
+        if not silent:
+            print '%(t)8.1fs %(s)s %(id)3d %(name)s' %  {'t': self.time, 's':self.nesting, 'id': action_sequence.get_id(), 'name' : action_sequence.get_name()}
 
         self.nesting.increment() 
 
         for item in action_sequence:
             if item.get_type() == 'ACSEQ':
-                self.process_action_sequence(item.get_id())
+                self.process_action_sequence(item.get_id(), silent)
             elif item.get_type() == 'WAIT': 
                self.time += item.get_seconds() 
             elif item.get_type() == 'TC' and (self.verbose == 1 or (self.verbose > 1 and len(item.get_parameters()) == 0)): 
-                print '%(t)8.1fs %(s)s %(TC)s %(name)s' %  {'t':self.time, 'TC':item.get_tc(), 's':self.nesting, 'id': item.get_name(), 'name' : item.get_description()}
+                if not silent:
+                    print '%(t)8.1fs %(s)s %(TC)s %(name)s' %  {'t':self.time, 'TC':item.get_tc(), 's':self.nesting, 'id': item.get_name(), 'name' : item.get_description()}
             elif item.get_type() == 'TC' and self.verbose > 1: 
                     self.nesting.increment()
                     p_str = ' : '.join([str(p) for p in item.get_parameters()]) 
-                    print '%(t)8.1fs %(s)s %(TC)s %(name)s' %  {'t':self.time, 'TC':item.get_tc(), 's':self.nesting, 'id': item.get_name(), 'name' : item.get_description() + ' (' + p_str + ' )'}
+                    if not silent:
+                        print '%(t)8.1fs %(s)s %(TC)s %(name)s' %  {'t':self.time, 'TC':item.get_tc(), 's':self.nesting, 'id': item.get_name(), 'name' : item.get_description() + ' (' + p_str + ' )'}
                     self.nesting.decrement()
 
         self.nesting.decrement() 
-        self.nesting.decrement() 
+        self.nesting.decrement()  
+
+        if self.nesting.get_level() == 0:
+            action_sequence.set_time(self.time)
 
 
 def main():
@@ -308,12 +326,13 @@ def main():
     parser.add_option("-d", "--directory", dest="dir", help="XML directory")
     parser.add_option("-v", "--verbose", dest="verbose", type="int", default = 0, help="verbosity level. 0 = default, 1 = show commands, 2 = show commands + parameters")
     parser.add_option("-i", "--id", dest="id", type="int",  help="Action sequence id")
+    parser.add_option("-l", "--list", dest="list", action="store_true", default = False,  help="List action sequences")
 
     (options, args) = parser.parse_args()
 
     if not options.dir:
         parser.error('directory argument is mandatory')
-    if not options.id:
+    if not options.list and not options.id:
         parser.error('id argument is mandatory')
 
 
@@ -325,7 +344,14 @@ def main():
 
     p = ActionSequenceProcessor(action_sequences, options.verbose)
 
-    p.process_action_sequence(int(options.id))
+    if options.list:
+
+        for a in action_sequences.keys():
+            print 'ID = %(id)3d %(time)8.1fs   %(name)s' %  {'id':a, 'name':action_sequences[a].get_name(), 'time':action_sequences[a].get_time()}
+
+    else:
+
+        p.process_action_sequence(int(options.id))
 
 
 if __name__ == '__main__':
