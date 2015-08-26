@@ -330,12 +330,13 @@ def main():
     parser.add_option("-l", "--list", dest="list", action="store_true", default = True,  help="List action sequences")
     parser.add_option("-n", "--nesting", dest="nesting", default =  '   ',  help="String to be used to mark nesting level.")
     parser.add_option("-s", "--separator", dest="separator", default =  ' ',  help="String to be used as delimiter in list.")
+    parser.add_option("-A", "--all", dest="all", action='store_true', default =  'False',  help="Details of all action sequences")
 
     (options, args) = parser.parse_args()
 
     if not options.dir or not os.path.isdir(options.dir):
         parser.error('No directory specified or directory not valid. See help for.usage')
-        
+
     action_sequences = {}
 
     for f in glob.glob(options.dir + '/*.xml'):
@@ -351,6 +352,13 @@ def main():
     if options.id:
 
         p.process_action_sequence(int(options.id))
+
+    elif options.all:
+
+        for id in action_sequences.keys():
+            print id
+            print 'ID = %(id)03d   TITLE = %(title)s' % {'id':id, 'title':action_sequences[id].get_name()}
+            p.process_action_sequence(int(id))
 
     elif options.list:
         for a in action_sequences.keys():
