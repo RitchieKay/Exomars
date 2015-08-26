@@ -324,7 +324,8 @@ def main():
 
     parser = OptionParser()
     parser.add_option("-d", "--directory", dest="dir", help="XML directory")
-    parser.add_option("-v", "--verbose", dest="verbose", type="int", default = 0, help="verbosity level. 0 = default, 1 = show commands, 2 = show commands + parameters")
+    parser.add_option("-v", "--verbose", dest="verbose", action="store_true", default = False, help="Verbose. Show TCs sent from action sequences.")
+    parser.add_option("-V", "--Verbose", dest="Verbose", action="store_true", default = False, help="Very Verbose. Show TCs and their parameter sent from action sequences.")
     parser.add_option("-i", "--id", dest="id", type="int",  help="Action sequence id")
     parser.add_option("-l", "--list", dest="list", action="store_true", default = True,  help="List action sequences")
     parser.add_option("-n", "--nesting", dest="nesting", default =  '   ',  help="String to be used to mark nesting level.")
@@ -341,7 +342,11 @@ def main():
         a = AcseqParser().parse(f)
         action_sequences[int(a.get_id())] = a
 
-    p = ActionSequenceProcessor(action_sequences, options.verbose, options.nesting)
+    verbosity = 0
+    if options.verbose: verbosity+= 1
+    if options.Verbose: verbosity+= 2
+
+    p = ActionSequenceProcessor(action_sequences, verbosity, options.nesting)
 
     if options.id:
 
